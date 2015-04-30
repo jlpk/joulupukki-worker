@@ -146,9 +146,9 @@ class OsxPacker(object):
 
     def transfert_package(self):
         self.logger.info("Start package transfert")
-        host = pecan.conf.self_host
-        user = pecan.conf.self_user
-        key = pecan.conf.self_key
+        host = pecan.conf.origin_host
+        user = pecan.conf.origin_user
+        key = pecan.conf.origin_key
         transfert_command = "scp -i %s %s@%s:%s" % (
             key,
             user,
