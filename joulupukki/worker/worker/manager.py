@@ -57,6 +57,7 @@ class Manager(Thread):
                     distro_name = new_build['distro_name']
                     build_conf = new_build['build_conf']
                     root_folder = new_build['root_folder']
+                    build_path = new_build['build_path']
                     build = Build(new_build['build'])
                     path = os.path.dirname(get_logger_path(build))
                     try:
@@ -67,7 +68,7 @@ class Manager(Thread):
                     self.logger.debug(build.dumps())
                     self.logger.debug("test")
                     builder_class = globals().get(build_type.title() + 'Builder')
-                    builder = builder_class(distro_name, build_conf, root_folder, self.logger, build)
+                    builder = builder_class(distro_name, build_conf, root_folder, self.logger, build, build_path)
                     builder.run()
                     """
                     build = Build(new_build)
