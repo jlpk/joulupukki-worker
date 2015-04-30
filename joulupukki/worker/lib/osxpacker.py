@@ -69,8 +69,6 @@ class OsxPacker(object):
         self.logger.info(self.job.get_folder_tmp())
         cmds = [
             "cd %s" % self.job.get_folder_tmp(),
-            "echo 'test'",
-            "pwd",
             "git clone -b %s %s source/" % (self.branch, self.source_url),
         ]
         command = " && "
@@ -122,6 +120,8 @@ class OsxPacker(object):
     def compile_(self):
         self.logger.info("Start compiling")
         # Compiling ring-daemon
+        cd_command = ["cd %s" % self.job.get_folder_tmp()]
+        self.commands = cd_command.extend(self.commands)
         long_command = " && "
         long_command = long_command.join(self.commands)
         long_command = long_command % {
