@@ -59,7 +59,10 @@ class Manager(Thread):
                     root_folder = new_build['root_folder']
                     build = Build(new_build['build'])
                     path = os.path.dirname(get_logger_path(build))
-                    os.makedirs(path)
+                    try:
+                        os.makedirs(path)
+                    except Exception:
+                        pass
                     self.logger = get_logger(build, distro_name)
                     self.logger.debug(build.dumps())
                     self.logger.debug("test")
