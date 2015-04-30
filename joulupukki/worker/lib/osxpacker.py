@@ -2,6 +2,7 @@ import os
 import subprocess
 import pecan
 import yaml
+import shutil
 
 from joulupukki.worker.lib.packer import Packer
 from joulupukki.common.logger import get_logger, get_logger_job
@@ -12,7 +13,7 @@ class OsxPacker(object):
         self.config = config
         self.builder = builder
         self.distro = "osx"
-        
+
         self.source_url = builder.source_url
         self.source_type = builder.source_type
         self.branch = builder.build.branch
@@ -50,6 +51,7 @@ class OsxPacker(object):
             ('setup', self.setup),
             ('compiling', self.compile_),
             ('transfering', self.transfert_package),
+            # ('cleaning', self.clean),
         )
         for step_name, step_function in steps:
             self.set_status(step_name)
@@ -159,6 +161,16 @@ class OsxPacker(object):
             path
         )
         return self.exec_cmd(transfert_command)
+
+    def clean(self):
+        try:
+            shutil.rmtree(self.builder.get_build_path())
+        except Exception:
+            self.logger.error("Could not remove temps files: %s" % (
+                self.builder.get_build_path
+            ))
+            return False
+        return True
 
     def exec_cmd(self, cmds):
         process = subprocess.Popen(

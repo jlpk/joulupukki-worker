@@ -1,5 +1,6 @@
 from threading import Thread
 from docker import Client
+import os
 
 import pecan
 
@@ -24,6 +25,14 @@ class Builder(Thread, ):
             pass
 
         self.folder = build.get_folder_path()
+
+    def get_build_path(self):
+        return os.path.join(pecan.conf.workspace_path,
+                            self.username,
+                            self.project_name,
+                            "builds",
+                            str(self.id_),
+                            )
 
     def run(self):
         pass
