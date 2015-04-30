@@ -49,6 +49,7 @@ class OsxPacker(object):
             ('reading_conf', self.reading_conf),
             ('setup', self.setup),
             ('compiling', self.compile_),
+            ('transfering', self.transfert_package),
         )
         for step_name, step_function in steps:
             self.set_status(step_name)
@@ -142,6 +143,19 @@ class OsxPacker(object):
             self.logger.error("Error in setup: %d" % process.returncode)
             return False
         return True
+
+    def transfert_package(self):
+        self.logger.info("Start package transfert")
+        host = pecan.conf.self_host
+        user = pecan.conf.self_user
+        key = pecan.conf.self_key
+        transfert_command = "scp -i %s %s@%s:%s" % (
+            key,
+            user,
+            host,
+            self.job.get_folder_path()
+        )
+        return self.exec_cmd(transfert_command)
 
     def exec_cmd(self, cmds):
         process = subprocess.Popen(
