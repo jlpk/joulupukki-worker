@@ -151,8 +151,10 @@ class OsxPacker(object):
         host = pecan.conf.origin_host
         user = pecan.conf.origin_user
         key = pecan.conf.origin_key
+        # TODO: Correct source and dest (package_dir and path), output/*
+        # TODO: Add the transfert of jobs/*
         path = self.builder.origin_build_path + "/output/"
-        package_dir = pecan.conf.workspace_path + "/../osx"
+        package_dir = self.builder.get_build_path()
         transfert_command = "scp -i %s %s@%s:%s" % (
             key,
             package_dir,
