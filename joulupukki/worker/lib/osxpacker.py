@@ -121,7 +121,7 @@ class OsxPacker(object):
         self.logger.info("Start compiling")
         # Compiling ring-daemon
         cd_command = ["cd %s" % self.job.get_folder_tmp()]
-        self.commands = cd_command.extend(self.commands)
+        self.commands = cd_command + self.commands
         long_command = " && "
         long_command = long_command.join(self.commands)
         long_command = long_command % {
