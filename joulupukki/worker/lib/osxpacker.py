@@ -1,5 +1,8 @@
 import os
 import subprocess
+import pecan
+import yaml
+import shutil
 
 from joulupukki.worker.lib.packer import Packer
 from joulupukki.common.logger import get_logger, get_logger_job
@@ -10,9 +13,10 @@ class OsxPacker(object):
         self.config = config
         self.builder = builder
         self.distro = "osx"
-        
+
         self.source_url = builder.source_url
         self.source_type = builder.source_type
+        self.branch = builder.build.branch
         self.folder = builder.folder
 
         job_data = {
@@ -42,8 +46,12 @@ class OsxPacker(object):
 
     def run(self):
         steps = (
+            ('cloning', self.clone),
+            ('reading_conf', self.reading_conf),
             ('setup', self.setup),
             ('compiling', self.compile_),
+            ('transfering', self.transfert_package),
+            # ('cleaning', self.clean),
         )
         for step_name, step_function in steps:
             self.set_status(step_name)
@@ -59,12 +67,46 @@ class OsxPacker(object):
         self.set_status('succeeded')
         return True
 
+    def clone(self):
+        self.logger.info("Cloning main repo")
+        self.logger.info(self.job.get_folder_tmp())
+        cmds = [
+            "cd %s" % self.job.get_folder_tmp(),
+            "git clone -b %s %s source/" % (self.branch, self.source_url),
+        ]
+        command = " && "
+        command = command.join(cmds)
+
+        return self.exec_cmd(command)
+
+    def reading_conf(self):
+        self.logger.info("Reading conf from main repo")
+        conf_file = "%s/source/.packer.yml" % self.job.get_folder_tmp()
+        try:
+            stream = open(conf_file, "r")
+        except IOError:
+            self.logger.error(".packer.yml not present")
+            return False
+        docs = yaml.load_all(stream)
+        osx_conf = {}
+        for doc in docs:
+            for key, value in doc.items():
+                osx_conf[key] = value
+
+        try:
+            self.dependencies = osx_conf['osx']['brew_deps']
+            self.commands = osx_conf['osx']['commands']
+        except KeyError:
+            self.logger.error("Malformed .packer.yml file")
+            return False
+        return True
+
     def setup(self):
         # Installing dependencies
-        dependencies = ["automake", "libtool", "gettext", "yasm", "autoconf",
-                        "pkg-config", "qt5", "llvm --with-clang --with-asan"]
-        for depen in dependencies:
-            cmd_list = ["brew", "install"].append(depen.split(" "))
+        for depen in self.dependencies:
+            cmd_list = ["brew", "install"]
+            cmd_list.extend(depen.split(" "))
+            self.logger.info("Installing dependency: %s" % depen)
             process = subprocess.Popen(
                 cmd_list,
                 stdout=subprocess.PIPE,
@@ -81,55 +123,68 @@ class OsxPacker(object):
     def compile_(self):
         self.logger.info("Start compiling")
         # Compiling ring-daemon
-        cmds = [
-            'echo "Deamon"',
-            'git clone https://gerrit-ring.savoirfairelinux.com/ring-daemon daemon',
-            'cd deamon',
-            'cd contrib',
-            'mkdir native',
-            'cd native',
-            '../bootstrap',
-            'make -j3',
-            'cd ../../',
-            './autogen.sh && configure --without-alsa --without-pulse --without-dbus --prefix=%(prefix_path)s',
-            'make install -j',
-            'cd ..',
-            'echo "LRC"',
-            'export CMAKE_PREFIX=/usr/Cellar/qt5/5.4.0',
-            'git clone git://anongit.kde.org/libringclient.git libringclient',
-            'cd libringclient',
-            'mkdir build',
-            'cd build',
-            'cmake .. -DCMAKE_INSTALL_PREFIX=%(prefix_path) -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=/usr/local/opt/llvm/bin/clang -DCMAKE_CXX_COMPILER=/usr/local/opt/llvm/bin/clang++',
-            'make install',
-            'cd ..',
-            'echo "Client"',
-            'git clone https://gerrit-ring.savoirfairelinux.com/ring-client-macosx',
-            'cd ring-client-macosx',
-            'mkdir build && cd build',
-            'export CMAKE_PREFIX_PATH=/usr/local/Cellar/qt5/5.4.0',
-            'cmake ../ -DCMAKE_INSTALL_PREFIX=%(prefix_path)s',
-            'make install -j',
-            'cpack -G DragNDrop Ring',
-        ]
+        cd_command = ["cd %s" % self.job.get_folder_tmp()]
+        self.commands = cd_command + self.commands
+        long_command = " && "
+        long_command = long_command.join(self.commands)
+        long_command = long_command % {
+            "prefix_path": pecan.conf.workspace_path
+        }
 
-        for cmd in cmds:
-            cmd_args_list = cmd.split(" ")
-            self.logger.info("Cmd: %s" % cmd_args_list)
-            process = subprocess.Popen(
-                cmd_args_list,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            )
-            stdout, stderr = process.communicate()
-            self.logger.debug(stdout)
-            self.logger.info(stderr)
-            if process.returncode:
-                self.logger.error("Error in setup: %d" % process.returncode)
-                return False
+        self.logger.info("Compiling")
+        process = subprocess.Popen(
+            long_command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True
+        )
+        stdout, stderr = process.communicate()
+        self.logger.debug(stdout)
+        self.logger.info(stderr)
+        if process.returncode:
+            self.logger.error("Error in setup: %d" % process.returncode)
+            return False
         return True
 
+    def transfert_package(self):
+        self.logger.info("Start package transfert")
+        host = pecan.conf.origin_host
+        user = pecan.conf.origin_user
+        key = pecan.conf.origin_key
+        # TODO: Correct source and dest (package_dir and path), output/*
+        # TODO: Add the transfert of jobs/*
+        path = self.builder.origin_build_path + "/output/"
+        package_dir = self.builder.get_build_path()
+        transfert_command = "scp -r -i %s %s %s@%s:%s" % (
+            key,
+            package_dir,
+            user,
+            host,
+            path
+        )
+        return self.exec_cmd(transfert_command)
 
+    def clean(self):
+        try:
+            shutil.rmtree(self.builder.get_build_path())
+        except Exception:
+            self.logger.error("Could not remove temps files: %s" % (
+                self.builder.get_build_path
+            ))
+            return False
+        return True
 
-    def parse_specdeb(self):
-        pass
+    def exec_cmd(self, cmds):
+        process = subprocess.Popen(
+            cmds,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True
+        )
+        stdout, stderr = process.communicate()
+        self.logger.debug(stdout)
+        self.logger.info(stderr)
+        if process.returncode:
+            self.logger.error("Error in setup: %d" % process.returncode)
+            return False
+        return True

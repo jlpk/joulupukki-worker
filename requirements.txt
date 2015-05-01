@@ -3,4 +3,5 @@ GitPython==0.3.6
 pecan==0.8.3
 WSME==0.6.4
 deb-pkg-tools==1.29.3
+pyaml==15.4.0
 joulupukki.common
