@@ -50,8 +50,7 @@ class OsxPacker(object):
             ('reading_conf', self.reading_conf),
             ('setup', self.setup),
             ('compiling', self.compile_),
-            ('transfering', self.transfert_package),
-            # ('cleaning', self.clean),
+            ('transfering', self.transfert_output),
         )
         for step_name, step_function in steps:
             self.set_status(step_name)
@@ -146,15 +145,39 @@ class OsxPacker(object):
             return False
         return True
 
-    def transfert_package(self):
+    def transfert_output(self):
         self.logger.info("Start package transfert")
+
+        try:
+            origin = (self.job.get_folder_tmp() +
+                      "/libringclient/ring-client-macosx/build/Ring.dmg")
+            destination = (self.builder.build.get_folder_path() +
+                           "/output/Ring.dmg")
+            os.rename(origin, destination)
+        except Exception:
+            self.logger.error("Can't move .dmg file")
+            return False
+
         host = pecan.conf.origin_host
         user = pecan.conf.origin_user
         key = pecan.conf.origin_key
         # TODO: Correct source and dest (package_dir and path), output/*
         # TODO: Add the transfert of jobs/*
         path = self.builder.origin_build_path + "/output/"
-        package_dir = self.builder.get_build_path()
+        package_dir = self.builder.build.get_folder_path() + "/output/"
+        transfert_command = "scp -r -i %s %s %s@%s:%s" % (
+            key,
+            package_dir,
+            user,
+            host,
+            path
+        )
+
+        if not self.exec_cmd(transfert_command):
+            return False
+
+        path = self.builder.origin_build_path + "/jobs/"
+        package_dir = self.job.get_folder_path() + "/../" + str(self.job.id_)
         transfert_command = "scp -r -i %s %s %s@%s:%s" % (
             key,
             package_dir,
@@ -166,10 +189,10 @@ class OsxPacker(object):
 
     def clean(self):
         try:
-            shutil.rmtree(self.builder.get_build_path())
+            shutil.rmtree(self.builder.build.get_folder_path())
         except Exception:
             self.logger.error("Could not remove temps files: %s" % (
-                self.builder.get_build_path
+                self.builder.build.get_folder_path()
             ))
             return False
         return True
