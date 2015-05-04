@@ -13,6 +13,7 @@ from datetime import datetime
 from urlparse import urlparse
 
 from docker import Client
+from docker import errors
 
 from deb_pkg_tools.control import parse_depends
 from deb_pkg_tools.control import load_control_file
@@ -190,7 +191,10 @@ class DebPacker(Packer):
         for line in self.cli.attach(self.container['Id'], stdout=True, stderr=True, stream=True):
             self.logger.info(line.strip())
         # Stop container
-        self.cli.stop(self.container['Id'])
+        try:
+	    self.cli.stop(self.container['Id'])
+	except errors.APIError as exp:
+	    self.logger.info("Contairner %s already stopped" % self.container['Id'])
         elapsed = timeit.default_timer() - start_time
         self.set_build_time(elapsed)
         self.logger.info("DEB Build finished in %ds", elapsed)
