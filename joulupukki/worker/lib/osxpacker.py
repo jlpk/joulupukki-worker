@@ -4,9 +4,9 @@ import pecan
 import yaml
 import shutil
 
-from joulupukki.worker.lib.packer import Packer
-from joulupukki.common.logger import get_logger, get_logger_job
+from joulupukki.common.logger import get_logger_job
 from joulupukki.common.datamodel.job import Job
+
 
 class OsxPacker(object):
     def __init__(self, builder, config):
