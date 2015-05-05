@@ -152,7 +152,7 @@ class OsxPacker(object):
             origin = (self.job.get_folder_tmp() +
                       "/libringclient/ring-client-macosx/build/Ring.dmg")
             destination = (self.builder.build.get_folder_path() +
-                           "/output/Ring.dmg")
+                           "/output/osx/Ring.dmg")
             os.rename(origin, destination)
         except Exception:
             self.logger.error("Can't move .dmg file")
@@ -164,7 +164,7 @@ class OsxPacker(object):
         # TODO: Correct source and dest (package_dir and path), output/*
         # TODO: Add the transfert of jobs/*
         path = self.builder.origin_build_path + "/output/"
-        package_dir = self.builder.build.get_folder_path() + "/output/"
+        package_dir = self.builder.build.get_folder_path() + "/output/*"
         transfert_command = "scp -r -i %s %s %s@%s:%s" % (
             key,
             package_dir,
@@ -176,8 +176,14 @@ class OsxPacker(object):
         if not self.exec_cmd(transfert_command):
             return False
 
+        try:
+            shutil.rmtree(self.job.get_folder_path() + "/tmp")
+        except Exception as e:
+            self.logger.error("Couldn't remove tmp job files: " + e)
+
         path = self.builder.origin_build_path + "/jobs/"
-        package_dir = self.job.get_folder_path() + "/../" + str(self.job.id_)
+        package_dir = (self.job.get_folder_path() + "/../" +
+                       str(self.job.id_) + "/")
         transfert_command = "scp -r -i %s %s %s@%s:%s" % (
             key,
             package_dir,
