@@ -127,7 +127,7 @@ class RpmPacker(Packer):
         if pecan.conf.ccache_path is not None and self.config.get('ccache', False):
             self.logger.info("CCACHE is enabled")
             ccache_path = os.path.join(pecan.conf.ccache_path,
-                                       self.builder.build.user.username,
+                                       self.builder.build.username,
                                        self.config['name'],
                                        self.config['distro'].replace(":", "_"))
             if not os.path.exists(ccache_path):
