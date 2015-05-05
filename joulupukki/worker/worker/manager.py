@@ -66,7 +66,6 @@ class Manager(Thread):
                         pass
                     self.logger = get_logger(build, distro_name)
                     self.logger.debug(build.dumps())
-                    self.logger.debug("test")
                     builder_class = globals().get(build_type.title() + 'Builder')
                     builder = builder_class(distro_name, build_conf, root_folder, self.logger, build, build_path)
                     builder.run()
