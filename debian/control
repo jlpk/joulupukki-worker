@@ -12,5 +12,6 @@ Homepage: https://github.com/jlpk/joulupukki-worker
 Package: joulupukki-worker
 Architecture: any
 Depends: joulupukki-common, python, python-pecan, python-wsme, python-docker, python-git, ${misc:Depends}
+Recommends: python-rpm
 # deb-pkg-tools
 Description: Joulupukki Worker
