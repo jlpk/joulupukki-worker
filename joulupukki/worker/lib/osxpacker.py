@@ -182,8 +182,8 @@ class OsxPacker(object):
             self.logger.error("Couldn't remove tmp job files: " + e)
 
         path = self.builder.origin_build_path + "/jobs/"
-        package_dir = self.builder.build.get_folder_path() + "/jobs/*"
-        transfert_command = "scp -r -i %s %s %s@%s:%s" % (
+        package_dir = self.job.get_folder_path() + "/"
+        transfert_command = 'rsync -az -e "ssh -i %s" %s %s@%s:%s' % (
             key,
             package_dir,
             user,
