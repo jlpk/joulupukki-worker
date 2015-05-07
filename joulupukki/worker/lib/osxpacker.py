@@ -19,6 +19,10 @@ class OsxPacker(object):
         self.branch = builder.build.branch
         self.folder = builder.folder
 
+        self.config['version'] = 'nightly'
+        self.config['release'] = '1'
+        self.config['name'] = 'ring'
+
         job_data = {
             'distro': self.distro,
             'username': self.builder.build.username,
@@ -148,6 +152,7 @@ class OsxPacker(object):
     def transfert_output(self):
         self.logger.info("Start package transfert")
 
+	# move dmg
         try:
             origin = (self.job.get_folder_tmp() +
                       "/libringclient/ring-client-macosx/build/Ring.dmg")
@@ -158,39 +163,31 @@ class OsxPacker(object):
             self.logger.error("Can't move .dmg file")
             return False
 
-        host = pecan.conf.origin_host
-        user = pecan.conf.origin_user
-        key = pecan.conf.origin_key
-        # TODO: Correct source and dest (package_dir and path), output/*
-        # TODO: Add the transfert of jobs/*
-        path = self.builder.origin_build_path + "/output/"
-        package_dir = self.builder.build.get_folder_path() + "/output/*"
-        transfert_command = "scp -r -i %s %s %s@%s:%s" % (
-            key,
-            package_dir,
-            user,
-            host,
-            path
-        )
-
-        if not self.exec_cmd(transfert_command):
-            return False
-
+        # Delete useless files
         try:
             shutil.rmtree(self.job.get_folder_path() + "/tmp")
         except Exception as e:
             self.logger.error("Couldn't remove tmp job files: " + e)
 
-        path = self.builder.origin_build_path + "/jobs/"
-        package_dir = self.job.get_folder_path() + "/"
-        transfert_command = 'rsync -az -e "ssh -i %s" %s %s@%s:%s' % (
+        host = pecan.conf.origin_host
+        user = pecan.conf.origin_user
+        key = pecan.conf.origin_key
+        # TODO: Correct source and dest (package_dir and path), output/*
+        # TODO: Add the transfert of jobs/*
+        path = self.builder.origin_build_path
+        package_dir = self.builder.build.get_folder_path() + "/*"
+        # transfert_command = "scp -r -i %s %s %s@%s:%s" % (
+        transfert_command = 'rsync -az -e "ssh -i %s" %s %s@%s:%s --exclude jobs/*/tmp' % (
             key,
             package_dir,
             user,
             host,
             path
         )
-        return self.exec_cmd(transfert_command)
+        self.logger.info(transfert_command)
+        command_res = self.exec_cmd(transfert_command)
+        self.logger.info(command_res)
+        return command_res
 
     def clean(self):
         try:
