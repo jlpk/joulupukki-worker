@@ -67,6 +67,7 @@ class Packer(object):
     def run(self):
         steps = (('setup', self.setup),
                  ('preparing', self.parse_specdeb),
+                 ('save_data', self.save_data),
                  ('building', self.docker_build),
                  ('packaging', self.docker_run),
                  ('finishing', self.get_output),
@@ -79,17 +80,18 @@ class Packer(object):
                 self.logger.debug("Task failed during step: %s", step_name)
                 self.set_status('failed')
                 return False
-            # Save package name in build.cfg
-            if self.config.get('name') is not None and self.builder.build.package_name is None:
-                self.builder.build.package_name = self.config.get('name')
-                self.builder.build._save()
-            if self.config.get('version') is not None and self.builder.build.package_version is None:
-                self.builder.build.package_version = self.config.get('version')
-                self.builder.build._save()
-            if self.config.get('release') is not None and self.builder.build.package_release is None:
-                self.builder.build.package_release = self.config.get('release')
-                self.builder.build._save()
+
         self.set_status('succeeded')
+        return True
+
+    def save_data(self):
+        if self.config.get('name') is not None and self.builder.build.package_name is None:
+            self.builder.build.package_name = self.config.get('name')
+        if self.config.get('version') is not None and self.builder.build.package_version is None:
+            self.builder.build.package_version = self.config.get('version')
+        if self.config.get('release') is not None and self.builder.build.package_release is None:
+            self.builder.build.package_release = self.config.get('release')
+        self.builder.build._save()
         return True
 
     def parse_specdeb(self):
