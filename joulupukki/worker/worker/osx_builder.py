@@ -8,7 +8,7 @@ import logging
 class OsxBuilder(Builder):
     def run(self):
         failed = False
-        packer = OsxPacker(self, self.build_conf)
+        packer = OsxPacker(self, self.build_conf, self.job_id)
         packer.set_status('building')
         self.logger.info("Packaging starting for %s", self.distro_name)
         if packer.run() is True:

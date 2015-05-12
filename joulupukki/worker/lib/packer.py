@@ -25,7 +25,7 @@ succeeded
 
 class Packer(object):
 
-    def __init__(self, builder, config):
+    def __init__(self, builder, config, job_id):
 
         self.config = config
 
@@ -36,14 +36,7 @@ class Packer(object):
         self.cli = builder.cli
         self.folder = builder.folder
 
-        job_data = {
-            'distro': config['distro'],
-            'username': self.builder.build.username,
-            'project_name': self.builder.build.project_name,
-            'build_id': self.builder.build.id_,
-        }
-        self.job = Job(job_data)
-        self.job.create()
+        self.job = Job.fetch(self.builder.build, job_id)
         self.folder_output = self.job.get_folder_output()
 
         self.job_tmp_folder = self.job.get_folder_tmp()

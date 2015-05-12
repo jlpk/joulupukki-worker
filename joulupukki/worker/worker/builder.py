@@ -6,7 +6,7 @@ import pecan
 
 class Builder(Thread, ):
     def __init__(self, distro_name, build_conf, root_folder, logger, build,
-                 origin_build_path):
+                 origin_build_path, job_id):
         self.source_url = build.source_url
         self.source_type = build.source_type
 
@@ -15,6 +15,7 @@ class Builder(Thread, ):
         self.root_folder = root_folder
         self.logger = logger
         self.build = build
+        self.job_id = job_id
         self.origin_build_path = origin_build_path
 
         try:

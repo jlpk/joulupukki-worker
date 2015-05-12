@@ -9,10 +9,9 @@ import logging
 
 class DockerBuilder(Builder):
     def run(self):
-        failed = False
         distro_type = distro_templates.get(self.distro_name)
         packer_class = globals().get(distro_type.capitalize() + 'Packer')
-        packer = packer_class(self, self.build_conf)
+        packer = packer_class(self, self.build_conf, self.job_id)
         packer.set_status('building')
         self.logger.info("Packaging starting for %s", self.distro_name)
         if packer.run() is True:
@@ -20,9 +19,4 @@ class DockerBuilder(Builder):
             logging.info("Packaging finished for %s", self.distro_name)
         else:
             packer.set_status('failed')
-            failed = True
             logging.info("Packaging finished for %s", self.distro_name)
-
-        if failed:
-            self.build.set_status('failed')
-            return False
