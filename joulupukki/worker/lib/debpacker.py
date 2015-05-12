@@ -112,14 +112,14 @@ class DebPacker(Packer):
         binds = {}
 
         commands.append("""apt-get update""")
-        commands.append("""apt-get upgrade -y""")
+        commands.append("""( apt-get upgrade -y || apt-get upgrade -y || apt-get upgrade -y )""")
         # Handle PPAs
         if self.config.get('ppa', []):
             commands.append("""apt-get install -y software-properties-common""")
             for ppa in self.config.get('ppa', []):
                 commands.append("""add-apt-repository %s""" % ppa)
 	    commands.append("""apt-get update -y""")
-            commands.append("""apt-get upgrade -y""")
+            commands.append("""( apt-get upgrade -y || apt-get upgrade -y || apt-get upgrade -y )""")
         # Handle ccache
         if pecan.conf.ccache_path is not None and self.config.get('ccache', False):
             self.logger.info("CCACHE is enabled")
@@ -140,7 +140,8 @@ class DebPacker(Packer):
             commands.append("""export CCACHE_DIR=/ccache""")
         # Handle build dependencies
         if self.config['deps']:
-            commands.append("""apt-get install -y %s""" % " ".join(self.config['deps']))
+            install_deps_commands = """apt-get install -y %s""" % " ".join(self.config['deps'])
+            commands.append("""( %s || %s || %s )""" % ((install_deps_commands, ) * 3 ))
         # Handle python build dependencies
         if self.config['deps_pip']:
             commands.append("""apt-get install -y python-setuptools""")
