@@ -3,6 +3,7 @@ from builder import Builder
 from joulupukki.common.distros import distro_templates
 from joulupukki.worker.lib.rpmpacker import RpmPacker
 from joulupukki.worker.lib.debpacker import DebPacker
+from joulupukki.worker.lib.win32packer import Win32Packer
 
 import logging
 
