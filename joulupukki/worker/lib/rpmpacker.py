@@ -172,7 +172,7 @@ class RpmPacker(Packer):
         self.logger.debug(command)
         self.logger.debug(volumes)
         try:
-            self.container = self.cli.create_container(self.container_tag, command=command, volumes=volumes)
+            self.container = self.cli.create_container(self.container_tag, command=command, volumes=volumes, cpuset=pecan.conf.docker_cpuset)
         except Exception as exp:
             self.logger.error("Error launching docker container: %s", exp)
             return False
