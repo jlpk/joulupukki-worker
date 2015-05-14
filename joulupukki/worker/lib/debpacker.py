@@ -180,7 +180,7 @@ class DebPacker(Packer):
         self.logger.info("DEB Build starting")
         start_time = timeit.default_timer()
         try:
-            self.container = self.cli.create_container(self.container_tag, command=command, volumes=volumes)
+            self.container = self.cli.create_container(self.container_tag, command=command, volumes=volumes, cpuset=pecan.conf.docker_cpuset)
         except Exception as exp:
             self.logger.error("Error launching docker container: %s", exp)
             return False

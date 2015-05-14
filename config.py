@@ -80,6 +80,7 @@ ccache_path = '%(confdir)s/ccache'
 
 supported_build_type = ['docker', 'ios']
 
+docker_cpuset = 1
 thread_count = 5
 #
 # All configurations are accessible at::
