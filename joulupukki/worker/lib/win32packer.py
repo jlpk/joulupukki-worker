@@ -79,7 +79,7 @@ class Win32Packer(Packer):
 
     def docker_build(self):
         self.logger.info("Dockerfile preparation")
-        f = open(pecan.conf.workspace_path + "/Dockerfile", 'r')
+        f = open(pecan.conf.workspace_path + "/../Dockerfile", 'r')
         dockerfile2 = f.read()
         # DOCKER FILE TEMPLATE
         dockerfile = '''
@@ -136,7 +136,7 @@ class Win32Packer(Packer):
         self.logger.error(self.container_tag)
         # BUILD
         self.logger.info("Docker Image Building")
-        output = self.cli.build(fileobj=f, rm=True, tag=self.container_tag, forcerm=True)
+        output = self.cli.build(fileobj=f, rm=True, tag=self.container_tag+"_deb", forcerm=True)
         # log output
         for i in output:
             dict_ = eval(i)
@@ -187,6 +187,8 @@ class Win32Packer(Packer):
         # commands.append("""yaourt -Syu""")
         volumes = ['/upstream']
         binds = {}
+
+        commands.append("""apt-get update""")
 
         # Handle ccache
         """if pecan.conf.ccache_path is not None and self.config.get('ccache', False):
