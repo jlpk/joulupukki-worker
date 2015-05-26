@@ -47,19 +47,25 @@ class OsxPacker(object):
             ('reading_conf', self.reading_conf),
             ('setup', self.setup),
             ('compiling', self.compile_),
-            ('transfering', self.transfert_output),
+#            ('transfering', self.transfert_output),
         )
         for step_name, step_function in steps:
             self.set_status(step_name)
             if step_function() is not True:
                 self.logger.debug("Task failed during step: %s", step_name)
+                # Set status
                 self.set_status('failed')
+                # Transfert output to central joulupukki
+                self.transfert_output()
                 return False
             # Save package name in build.cfg
             if (self.config.get('name') is not None and
                     self.builder.build.package_name is None):
                 self.builder.build.package_name = self.config.get('name')
                 self.builder.build._save()
+        # Transfert output to central joulupukki
+        self.transfert_output()
+        # Set status
         self.set_status('succeeded')
         return True
 
@@ -154,7 +160,7 @@ class OsxPacker(object):
             os.rename(origin, destination)
         except Exception:
             self.logger.error("Can't move .dmg file")
-            return False
+            #return False
 
         # Delete useless files
         try:
