@@ -5,6 +5,17 @@
      if len(sys.argv) <= 2:
          # set default file
 -        config_file_path = os.path.join(os.getcwd(), "config.py")
-+        config_file_path = os.path.join("/etc/joulupukki/worker", "config.py")
++        config_file_path = "/etc/joulupukki/joulupukki-worker.conf"
          sys.argv.append(config_file_path)
      CommandRunner.handle_command_line()
+--- a/config.py
++++ b/config.py
+@@ -50,7 +50,7 @@
+ # Custom Configurations must be in Python dictionary format::
+ #
+ # foo = {'bar':'baz'}
+-workspace_path = '%(confdir)s/../output'
++workspace_path = '/var/lib/joulupukki/output'
+ 
+ rabbit_server = "127.0.0.1"
+ rabbit_port = 5672
