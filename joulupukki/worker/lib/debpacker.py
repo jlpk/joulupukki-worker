@@ -193,9 +193,9 @@ class DebPacker(Packer):
             self.logger.info(line.strip())
         # Stop container
         try:
-	    self.cli.stop(self.container['Id'])
-	except errors.APIError as exp:
-	    self.logger.info("Contairner %s already stopped" % self.container['Id'])
+            self.cli.stop(self.container['Id'])
+        except errors.APIError as exp:
+    	    self.logger.info("Container %s already stopped" % self.container['Id'])
         elapsed = timeit.default_timer() - start_time
         self.set_build_time(elapsed)
         self.logger.info("DEB Build finished in %ds", elapsed)

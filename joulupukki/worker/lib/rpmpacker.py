@@ -184,7 +184,10 @@ class RpmPacker(Packer):
         for line in self.cli.attach(self.container['Id'], stdout=True, stderr=True, stream=True):
             self.logger.info(line.strip())
         # Stop container
-        self.cli.stop(self.container['Id'])
+        try:
+            self.cli.stop(self.container['Id'])
+        except errors.APIError as exp:
+            self.logger.info("Container %s already stopped" % self.container['Id'])
         elapsed = timeit.default_timer() - start_time
         self.set_build_time(elapsed)
         self.logger.info("RPM Build finished in %ds", elapsed)
