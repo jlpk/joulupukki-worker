@@ -1,7 +1,6 @@
 import os
 import subprocess
 import pecan
-import yaml
 import shutil
 
 from joulupukki.common.logger import get_logger_job
@@ -18,10 +17,6 @@ class OsxPacker(object):
         self.source_type = builder.source_type
         self.branch = builder.build.branch
         self.folder = builder.folder
-
-        self.config['version'] = 'nightly'
-        self.config['release'] = '1'
-        self.config['name'] = 'ring'
 
         self.job = Job.fetch(self.builder.build, job_id)
         self.folder_output = self.job.get_folder_output()
@@ -59,9 +54,9 @@ class OsxPacker(object):
                 self.transfert_output()
                 return False
             # Save package name in build.cfg
-            if (self.config.get('name') is not None and
+            if (self.config['info']['name'] is not None and
                     self.builder.build.package_name is None):
-                self.builder.build.package_name = self.config.get('name')
+                self.builder.build.package_name = self.config['info']['name']
                 self.builder.build._save()
         # Transfert output to central joulupukki
         self.transfert_output()
@@ -82,22 +77,11 @@ class OsxPacker(object):
         return self.exec_cmd(command)
 
     def reading_conf(self):
-        self.logger.info("Reading conf from main repo")
-        conf_file = "%s/source/.packer.yml" % self.job.get_folder_tmp()
+        self.logger.info("Checking conf")
         try:
-            stream = open(conf_file, "r")
-        except IOError:
-            self.logger.error(".packer.yml not present")
-            return False
-        docs = yaml.load_all(stream)
-        osx_conf = {}
-        for doc in docs:
-            for key, value in doc.items():
-                osx_conf[key] = value
-
-        try:
-            self.dependencies = osx_conf['osx']['brew_deps']
-            self.commands = osx_conf['osx']['commands']
+            self.dependencies = self.config['brew_deps']
+            self.commands = self.config['commands']
+            self.transfer_files = self.config['transfer']['files']
         except KeyError:
             self.logger.error("Malformed .packer.yml file")
             return False
@@ -153,13 +137,14 @@ class OsxPacker(object):
 
 	# move dmg
         try:
-            origin = (self.job.get_folder_tmp() +
-                      "/libringclient/ring-client-macosx/build/Ring.dmg")
-            destination = (self.builder.build.get_folder_path() +
-                           "/output/osx/Ring.dmg")
-            os.rename(origin, destination)
+            for f in transfert_files:
+                origin = (self.job.get_folder_tmp() + f)
+                destination = (self.builder.build.get_folder_path() +
+                               "/output/" +
+                               f.split('/')[-1])
+                os.rename(origin, destination)
         except Exception:
-            self.logger.error("Can't move .dmg file")
+            self.logger.error("Can't move output file(s)")
             #return False
 
         # Delete useless files
