@@ -54,7 +54,7 @@ class OsxPacker(object):
                 self.transfert_output()
                 return False
             # Save package name in build.cfg
-            if (self.config['info']['name'] is not None and
+            if ('info' in self.config  and 'name' in self.config['info'] and
                     self.builder.build.package_name is None):
                 self.builder.build.package_name = self.config['info']['name']
                 self.builder.build._save()
@@ -140,7 +140,7 @@ class OsxPacker(object):
             for f in transfert_files:
                 origin = (self.job.get_folder_tmp() + f)
                 destination = (self.builder.build.get_folder_path() +
-                               "/output/" +
+                               "/output/osx/" +
                                f.split('/')[-1])
                 os.rename(origin, destination)
         except Exception:
