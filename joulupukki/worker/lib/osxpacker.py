@@ -38,7 +38,6 @@ class OsxPacker(object):
 
     def run(self):
         steps = (
-            ('cloning', self.clone),
             ('reading_conf', self.reading_conf),
             ('setup', self.setup),
             ('compiling', self.compile_),
@@ -63,18 +62,6 @@ class OsxPacker(object):
         # Set status
         self.set_status('succeeded')
         return True
-
-    def clone(self):
-        self.logger.info("Cloning main repo")
-        self.logger.info(self.job.get_folder_tmp())
-        cmds = [
-            "cd %s" % self.job.get_folder_tmp(),
-            "git clone -b %s %s source/" % (self.branch, self.source_url),
-        ]
-        command = " && "
-        command = command.join(cmds)
-
-        return self.exec_cmd(command)
 
     def reading_conf(self):
         self.logger.info("Checking conf")
@@ -137,10 +124,10 @@ class OsxPacker(object):
 
 	# move dmg
         try:
-            for f in transfert_files:
-                origin = (self.job.get_folder_tmp() + f)
-                destination = (self.builder.build.get_folder_path() +
-                               "/output/osx/" +
+            for f in transfer_files:
+                origin = os.path.join(self.job.get_folder_tmp(), f)
+                destination = os.path.join(self.builder.build.get_folder_path(),
+                               "output/osx/",
                                f.split('/')[-1])
                 os.rename(origin, destination)
         except Exception:
@@ -172,16 +159,6 @@ class OsxPacker(object):
         command_res = self.exec_cmd(transfert_command)
         self.logger.info(command_res)
         return command_res
-
-    def clean(self):
-        try:
-            shutil.rmtree(self.builder.build.get_folder_path())
-        except Exception:
-            self.logger.error("Could not remove temps files: %s" % (
-                self.builder.build.get_folder_path()
-            ))
-            return False
-        return True
 
     def exec_cmd(self, cmds):
         process = subprocess.Popen(
