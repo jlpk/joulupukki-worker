@@ -74,7 +74,7 @@ distros = (
     ("centos_7", "centos:7", "rpm", "docker"),
     ("fedora_20", "fedora:20", "rpm", "docker"),
     ("fedora_21", "fedora:21", "rpm", "docker"),
-    ("win_32", "ubuntu:14.10", "win32", "docker"),
+    ("win32", "ubuntu:14.10", "win32", "docker"),
 )
 docker_version = "1.14"
 ccache_path = '%(confdir)s/ccache'
