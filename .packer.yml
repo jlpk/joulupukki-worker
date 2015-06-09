@@ -1,6 +1,9 @@
 ubuntu_14.04:
     debian: debian
     type: docker
+ubuntu_14.10:
+    debian: debian
+    type: docker
 debian_8:
     debian: debian
     type: docker
