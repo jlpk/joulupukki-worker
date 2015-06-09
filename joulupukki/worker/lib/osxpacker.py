@@ -124,10 +124,11 @@ class OsxPacker(object):
 
 	# move dmg
         try:
-            for f in transfer_files:
+            for f in self.transfer_files:
                 origin = os.path.join(self.job.get_folder_tmp(), f)
                 destination = os.path.join(self.builder.build.get_folder_path(),
-                               "output/osx/",
+                               "output",
+                               "osx",
                                f.split('/')[-1])
                 os.rename(origin, destination)
         except Exception:
