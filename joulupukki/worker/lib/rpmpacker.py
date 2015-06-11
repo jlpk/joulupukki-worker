@@ -42,7 +42,7 @@ class RpmPacker(Packer):
         self.config['source'] = ''
         self.config['sources'] = ''
         self.config['source_folder'] = ''
-        self.config['source_archived'] = False
+        self.config['source_archived'] = self.config.get('source_archived', False)
         raw_sources = []
         # Prepare spec datas
         mapping = {1000: 'name',
@@ -108,7 +108,6 @@ class RpmPacker(Packer):
                     self.logger.info(str(i))
         self.logger.info("Docker Image Built")
         return True
-            
 
     def docker_run(self):
         # PREPARE BUILD COMMAND
@@ -127,9 +126,10 @@ class RpmPacker(Packer):
         commands.append("""yum upgrade -y""")
         commands.append("""mkdir -p /sources""")
         if self.config['source_archived']:
-             commands.append("""mkdir -p /sources/%s""" % self.config['source_folder'])
-             commands.append("""cp /%s/%s /sources/%s""" % (docker_source_root_folder, self.config['sourced'], self.config['sourced']))
-             commands.append("""cp /%s/%s %s""" % (docker_source_root_folder, self.config['spec'], docker_spec_file))
+            self.logger.info("source_archived")
+            commands.append("""rsync -vrlptD --exclude '.git' --exclude '*.spec' /%s/ /sources""" % docker_source_root_folder)
+            commands.append("""mkdir -p /sources/%s/ """ % self.config['source_folder'])
+            commands.append("""cp -v /%s/%s /sources/%s/ """ % (docker_source_root_folder, self.config['spec'], self.config['source_folder']))
         else:
             commands.append("""rsync -rlptD --exclude '.git' /%s/ /sources/%s""" % (docker_source_root_folder, self.config['source_folder']))
             commands.append("""tar -C /sources -cf /sources/%s %s""" % (self.config['source'], self.config['source_folder']))
@@ -170,8 +170,11 @@ class RpmPacker(Packer):
                 self.config['release'] = date
             commands.append(""" sed -i "s/^Release:.*/Release: %s/g" %s """ % (self.config['release'], docker_spec_file))
 
-        # Build
-        commands.append("""rpmbuild -ba /%s --define "_sourcedir /sources" """ % docker_spec_file)
+        # TODO STOP using root and force/fix topdir...
+        #commands.append(""" echo "%_topdir /root/rpmbuild" > ~/.rpmmacros """)
+        commands.append(""" HOME=/root """)
+        # Build command
+        commands.append("""rpmbuild -ba %s --define "_sourcedir /sources" """ % docker_spec_file)
         # Finish command preparation
         command = "bash -c '%s'" % " && ".join(commands)
         self.logger.info("Build command: %s", command)
