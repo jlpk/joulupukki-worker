@@ -13,7 +13,7 @@ from urlparse import urlparse
 from collections import OrderedDict
 from datetime import datetime
 
-from docker import Client
+from docker import Client, errors
 try:
     import rpm
 except:
@@ -42,6 +42,7 @@ class RpmPacker(Packer):
         self.config['source'] = ''
         self.config['sources'] = ''
         self.config['source_folder'] = ''
+        self.config['source_archived'] = False
         raw_sources = []
         # Prepare spec datas
         mapping = {1000: 'name',
@@ -118,10 +119,20 @@ class RpmPacker(Packer):
         volumes = ['/upstream']
         binds = {}
 
+        # Add external repository
+        for repo in self.config.get('repos', {}):
+            for rpmrepo in repo.get('rpm', []):
+                commands.append("""yum install -y %s""" % rpmrepo)
+        # Upgrade
         commands.append("""yum upgrade -y""")
         commands.append("""mkdir -p /sources""")
-        commands.append("""rsync -rlptD --exclude '.git' /%s/ /sources/%s""" % (docker_source_root_folder, self.config['source_folder']))
-        commands.append("""tar -C /sources -cf /sources/%s %s""" % (self.config['source'], self.config['source_folder']))
+        if self.config['source_archived']:
+             commands.append("""mkdir -p /sources/%s""" % self.config['source_folder'])
+             commands.append("""cp /%s/%s /sources/%s""" % (docker_source_root_folder, self.config['sourced'], self.config['sourced']))
+             commands.append("""cp /%s/%s %s""" % (docker_source_root_folder, self.config['spec'], docker_spec_file))
+        else:
+            commands.append("""rsync -rlptD --exclude '.git' /%s/ /sources/%s""" % (docker_source_root_folder, self.config['source_folder']))
+            commands.append("""tar -C /sources -cf /sources/%s %s""" % (self.config['source'], self.config['source_folder']))
 
         # Handle ccache
         if pecan.conf.ccache_path is not None and self.config.get('ccache', False):
