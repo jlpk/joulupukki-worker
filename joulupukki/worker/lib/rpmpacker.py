@@ -120,8 +120,8 @@ class RpmPacker(Packer):
         binds = {}
 
         # Add external repository
-        for repo in self.config.get('repos', {}):
-            for rpmrepo in repo.get('rpm', []):
+        if self.config.get('repos'):
+            for rpmrepo in self.config.get('repos').get('rpm', []):
                 commands.append("""yum install -y %s""" % rpmrepo)
         # Upgrade
         commands.append("""yum upgrade -y""")
