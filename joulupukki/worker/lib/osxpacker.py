@@ -97,8 +97,8 @@ class OsxPacker(object):
         self.logger.info("Start compiling")
         # Compiling ring-daemon
         cd_command = ["cd %s" % self.job.get_folder_tmp()]
-        self.commands = cd_command + self.commands
-        long_command = " && "
+        self.commands = cd_command + self.commands + [" 2>&1"]
+        long_command = " 2>&1 && "
         long_command = long_command.join(self.commands)
         long_command = long_command % {
             "prefix_path": pecan.conf.workspace_path
@@ -108,12 +108,10 @@ class OsxPacker(object):
         process = subprocess.Popen(
             long_command,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
             shell=True
         )
         stdout, stderr = process.communicate()
-        self.logger.debug(stdout)
-        self.logger.info(stderr)
+        self.logger.info(stdout)
         if process.returncode:
             self.logger.error("Error in setup: %d" % process.returncode)
             return False
