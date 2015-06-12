@@ -5,6 +5,7 @@ import timeit
 import glob
 import shutil
 import yaml
+import tarfile
 
 from docker import errors
 from datetime import datetime
@@ -162,12 +163,18 @@ class Win32Packer(Packer):
 
     def get_output(self):
         # Get exe from the container
-        exe_raw = self.cli.copy(self.container['Id'], "/output")
+        tar_raw = self.cli.copy(self.container['Id'], "/output")
+        exe_tar = tarfile.open(fileobj=BytesIO(tar_raw.read()))
 
-        # Write the installer in the output directory
-        fileFd = open("%s/%s" % (self.folder_output , self.config["package_name"]), "w")
-        fileFd.write(exe_raw.read())
-        fileFd.close()
+        try:
+            # move files to folder output
+            exe_tar.extractall(self.job_tmp_folder)
+        except:
+            exe_tar.close()
+            return False
+        exe_tar.close()
+
+        shutil.move(self.job_tmp_folder+"/output", self.folder_output+"/"+self.config["package_name"])
 
         self.logger.info("Win files deposed in %s" % self.folder_output)
         return True
