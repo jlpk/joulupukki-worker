@@ -69,8 +69,15 @@ class Packer(object):
 
         for step_name, step_function in steps:
             self.set_status(step_name)
-            if step_function() is not True:
-                self.logger.debug("Task failed during step: %s", step_name)
+            try:
+                function_result = step_function()
+            except Exception as exp:
+                self.logger.info("Task failed during step: %s", step_name)
+                self.logger.info("Error: %s", exp)
+                self.set_status('failed')
+                return False
+            if function_result is not True:
+                self.logger.info("Task failed during step: %s", step_name)
                 self.set_status('failed')
                 return False
 
